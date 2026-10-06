@@ -78,7 +78,7 @@ report = f"""# Báo cáo Lab: Self evolving Agentic
 
 | Họ tên | Mã sinh viên | Phần đóng góp |
 |---|---|---|
-| Phạm Thị Thùy Linh (theo tên kho) | 2A202602909 (theo tên kho) | Cài đặt harness, curator, thực nghiệm và báo cáo với hỗ trợ của trợ lý lập trình |
+| Phạm Thị Thùy Linh  | 2A202602909  | Cài đặt harness, curator, thực nghiệm và báo cáo với hỗ trợ của trợ lý lập trình |
 
 - Nhà cung cấp: endpoint tương thích OpenAI `modelapi.vn`; mô hình thí nghiệm chính `openai:gpt-5.5`, nhiệt độ 0, giới hạn đệ quy 40. Các lệnh truyền LAB_MODEL rõ ràng; .env đã cập nhật cùng tên mô hình. Không đưa khóa vào kho.
 - Windows và Docker Desktop Linux containers; Python 3.12, Deep Agents 0.7.21. 32 test ngoại tuyến đạt sau khi hoàn thiện mã. SDK timeout=120 giây, max_retries=0; một lượt subagents trước chỉnh timeout bị dừng vì chờ lâu, không có bản ghi hoàn tất và không đưa vào bảng chính.
