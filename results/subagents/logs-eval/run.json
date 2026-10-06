@@ -1,0 +1,76 @@
+{
+  "task": "logs-eval",
+  "condition": "subagents",
+  "model": "openai:gpt-5.5",
+  "recursion_limit": 60,
+  "role": "eval",
+  "timestamp": "2026-10-06T14:47:09.475896+00:00",
+  "error": null,
+  "score": 0.6,
+  "passed": 6,
+  "total": 10,
+  "checks": [
+    {
+      "name": "valid_structure",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "entry_count",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "timestamps_utc",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "levels_uppercase",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "repeat_counts",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "counts_by_service",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "rule_service_names",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "name": "rule_sorted_errors",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "name": "rule_schema_header",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "name": "rule_source_line",
+      "passed": false,
+      "detail": ""
+    }
+  ],
+  "seconds": 180.3,
+  "tokens": {
+    "input": 112831,
+    "output": 7459,
+    "total": 120290
+  },
+  "tool_calls": 9,
+  "subagent_calls": 2,
+  "skills_read": 0,
+  "skills_modified": false,
+  "skills_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "final_message": "Created `workspace/errors.json`.\n\nParsed `workspace/worker.log` using the README format: selected only ERROR/SEVERE/FATAL entries case-insensitively, converted timestamps to UTC, normalized levels to uppercase, used the first-line message after the final separator, applied repeated-message counts, and summed repeat counts by service."
+}

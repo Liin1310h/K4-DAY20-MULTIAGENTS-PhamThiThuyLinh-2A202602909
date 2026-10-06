@@ -2,3 +2,8 @@
 {"timestamp": "2026-10-06T10:31:06.743368+00:00", "command": ["python", "-m", "lab.curator"], "returncode": 0}
 {"timestamp": "2026-10-06T10:32:52.517788+00:00", "command": ["python", "-m", "lab.curator"], "returncode": 0}
 {"timestamp": "2026-10-06T10:34:17.883434+00:00", "command": ["python", "-m", "lab.runner", "--condition", "skills-auto", "--tasks", "learn", "--recursion-limit", "40"], "returncode": 0}
+{"timestamp": "2026-10-06T10:42:52.789468+00:00", "command": ["python", "-m", "lab.runner", "--condition", "baseline", "--tasks", "eval", "--recursion-limit", "40"], "returncode": 0}
+{"timestamp": "2026-10-06T10:48:07.434264+00:00", "command": ["python", "-m", "lab.runner", "--condition", "subagents", "--tasks", "eval", "--recursion-limit", "40"], "returncode": 0}
+{"timestamp": "2026-10-06T12:40:54.277307+00:00", "command": ["python", "-m", "lab.runner", "--condition", "baseline", "--tasks", "eval", "--recursion-limit", "40"], "returncode": 0}
+{"timestamp": "2026-10-06T12:43:32.207028+00:00", "command": ["python", "-m", "lab.runner", "--condition", "subagents", "--tasks", "eval", "--recursion-limit", "40"], "returncode": 0}
+{"timestamp": "2026-10-06T12:48:48.182768+00:00", "command": ["python", "-m", "lab.runner", "--condition", "skills-auto", "--tasks", "all", "--recursion-limit", "40"], "returncode": 0}

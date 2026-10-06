@@ -12,6 +12,9 @@ runs = load_runs(root / "results")
 dev = [json.loads(p.read_text(encoding="utf-8")) for p in
        (root / "results" / "skills-auto-dev").glob("*/run.json")]
 skills = list((root / "skills" / "auto").glob("*/SKILL.md"))
+all_records = [json.loads(p.read_text(encoding="utf-8")) for p in (root / "results").rglob("run.json")]
+unique_records = {(r["condition"], r["task"], r["timestamp"]): r for r in all_records}
+recorded_tokens = sum(r["tokens"]["total"] for r in unique_records.values())
 tag = subprocess.run(["git", "rev-parse", "freeze"], cwd=root, capture_output=True, text=True)
 freeze = tag.stdout.strip() if tag.returncode == 0 else "Chưa tạo; giả thuyết được đăng ký trước đánh giá."
 def md(text):
@@ -77,9 +80,10 @@ report = f"""# Báo cáo Lab: Self evolving Agentic
 |---|---|---|
 | Phạm Thị Thùy Linh (theo tên kho) | 2A202602909 (theo tên kho) | Cài đặt harness, curator, thực nghiệm và báo cáo với hỗ trợ của trợ lý lập trình |
 
-- Nhà cung cấp: endpoint tương thích OpenAI `modelapi.vn`; mô hình thí nghiệm chính `openai:gpt-5.5`, nhiệt độ 0, giới hạn đệ quy 40. Truyền `LAB_MODEL` vào container để ghi đè giá trị cũ gpt-4o-mini; không đưa khóa vào kho.
+- Nhà cung cấp: endpoint tương thích OpenAI `modelapi.vn`; mô hình thí nghiệm chính `openai:gpt-5.5`, nhiệt độ 0, giới hạn đệ quy 40. Các lệnh truyền LAB_MODEL rõ ràng; .env đã cập nhật cùng tên mô hình. Không đưa khóa vào kho.
 - Windows và Docker Desktop Linux containers; Python 3.12, Deep Agents 0.7.21. 32 test ngoại tuyến đạt sau khi hoàn thiện mã. SDK timeout=120 giây, max_retries=0; một lượt subagents trước chỉnh timeout bị dừng vì chờ lâu, không có bản ghi hoàn tất và không đưa vào bảng chính.
 - Hiện có {len(runs)} bản ghi chính và {len(dev)} bản ghi phát triển skill; các pilot, lỗi xác thực và lượt sửa môi trường được lưu thư mục riêng. Mỗi bản ghi ghi token và thời gian thật từ callback/đồng hồ.
+- Toàn bộ lịch sử có {len(unique_records)} lượt tác vụ có bản ghi duy nhất (khử bản sao bằng condition/task/timestamp), cộng một lượt subagents bị dừng chưa có bản ghi. Tổng token tác vụ ghi nhận {recorded_tokens:,}, cộng 16.296 token curator; không tính được token của lượt bị dừng. Không đặt trần tiền/token cứng; dùng giới hạn bước và timeout để hạn chế vòng lặp. Token không quy đổi thành tiền khi chưa có thông tin tính phí của nhà cung cấp.
 - Commit của tag freeze: {freeze}
 - Runner chuẩn hóa CRLF thành LF chỉ trong bản sao Python ở sandbox vì checker so hash test LF. Nguồn trong tasks không sửa. Lượt trước chỉnh môi trường được sao lưu ở `results/pre-lf-normalization`.
 

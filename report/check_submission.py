@@ -1,4 +1,5 @@
 """Check completeness, record consistency and accidental credential copies."""
+import ast
 import json
 import subprocess
 from pathlib import Path
@@ -25,6 +26,10 @@ for condition in conditions:
             problems.append(f"Skills modified: {condition}/{task}")
         if record["passed"] != sum(bool(c["passed"]) for c in record["checks"]):
             problems.append(f"Inconsistent check count: {condition}/{task}")
+        if record["total"] != len(record["checks"]) or not record["total"]:
+            problems.append(f"Invalid total: {condition}/{task}")
+        elif abs(record["score"] - record["passed"] / record["total"]) > 1e-9:
+            problems.append(f"Inconsistent score: {condition}/{task}")
         if condition == "skills-auto" and record["skills_sha256"] != frozen_hash:
             problems.append(f"Wrong skills hash: {task}")
 skills = list((root / "skills" / "auto").glob("*/SKILL.md"))
@@ -36,10 +41,32 @@ for path in skills:
         problems.append(f"Invalid skill {path.parent.name}: {issues}")
 if len(list((root / "results" / "skills-auto-dev").glob("*/run.json"))) != 3:
     problems.append("Missing three pre-freeze development records")
+for path in (root / "results" / "skills-auto-dev").glob("*/run.json"):
+    record = json.loads(path.read_text(encoding="utf-8"))
+    if record["skills_sha256"] != frozen_hash or record["skills_modified"]:
+        problems.append(f"Development run used different skills: {record['task']}")
 protected = ["tests", "tasks", "scripts", "src/lab/model.py", "src/lab/tasks.py",
              "src/lab/grading.py", "src/lab/testing.py", "src/lab/compare.py"]
 if subprocess.run(["git", "-c", "core.autocrlf=true", "diff", "--quiet", "ad29c55", "--", *protected], cwd=root).returncode:
     problems.append("Provided source files changed")
+preserved = {
+    "src/lab/agent.py": {"PATHS_NOTE", "BASE_PROMPT", "SKILLS_NOTE", "SUBAGENTS_NOTE"},
+    "src/lab/runner.py": {"CONDITIONS", "render_trace", "main"},
+    "src/lab/curator.py": {"SAFE_NAME", "validate_skill", "parse_skill_blocks"},
+}
+for filename, names in preserved.items():
+    original = subprocess.run(["git", "show", f"ad29c55:{filename}"], cwd=root,
+                              capture_output=True, text=True, check=True).stdout
+    def nodes(source):
+        result = {}
+        for node in ast.parse(source).body:
+            name = node.name if isinstance(node, ast.FunctionDef) else (
+                node.targets[0].id if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name) else None)
+            if name in names:
+                result[name] = ast.dump(node)
+        return result
+    if nodes(original) != nodes((root / filename).read_text(encoding="utf-8")):
+        problems.append(f"Provided definitions modified: {filename}")
 config = dotenv_values(root / ".env")
 secrets = [value for key,value in config.items()
            if value and len(value) >= 12 and ("KEY" in key or "TOKEN" in key or "SECRET" in key)]

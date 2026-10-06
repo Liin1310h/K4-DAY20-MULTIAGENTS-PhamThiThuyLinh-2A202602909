@@ -2,9 +2,12 @@
 import json
 import re
 import shutil
+import subprocess
 from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
+if subprocess.run(["git", "rev-parse", "--verify", "freeze"], cwd=root, capture_output=True).returncode == 0:
+    raise SystemExit("Pilot restoration is disabled after freeze; preserve official results.")
 for path in (root / "results" / "baseline").glob("*/run.json"):
     data = json.loads(path.read_text(encoding="utf-8"))
     if "Authentication" not in (data.get("error") or ""):
