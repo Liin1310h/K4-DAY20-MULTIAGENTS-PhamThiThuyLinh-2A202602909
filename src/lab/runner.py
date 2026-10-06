@@ -6,10 +6,17 @@ Chạy thật:   python -m lab.runner --condition baseline --tasks learn
 """
 import argparse
 import json
-from pathlib import Path
+import os
+import re
+import tempfile
+import time
+from datetime import datetime, timezone
+from pathlib import Path, PurePosixPath
 
+from langchain_core.callbacks import UsageMetadataCallbackHandler
 from langchain_core.messages import AIMessage, ToolMessage
 
+from .agent import build_agent
 from .grading import grade                                                      # có sẵn
 from .tasks import ROOT, get_task, hash_dir, list_tasks, prepare_sandbox         # có sẵn
 
@@ -65,7 +72,120 @@ def run_task(task_id: str, condition: str, results_dir="results", model=None, re
     Lỗi khi chạy tác tử KHÔNG được làm chương trình dừng: ghi vào `error` và vẫn chấm điểm.
     Sandbox là thư mục tạm NGOÀI kho mã nguồn và phải được xóa sau khi chạy.
     """
-    raise NotImplementedError("TODO 1: cài đặt run_task (xem guides/pseudocode/03_runner.md)")
+    cfg = CONDITIONS[condition]
+    task = get_task(task_id)
+    skills_dir = ROOT / cfg["skills_dir"] if cfg["skills_dir"] else None
+    out = Path(results_dir) / condition / task_id
+    out.mkdir(parents=True, exist_ok=True)
+    record = {
+        "task": task_id,
+        "condition": condition,
+        "model": os.getenv("LAB_MODEL") if model is None else getattr(model, "_llm_type", "injected"),
+        "recursion_limit": recursion_limit,
+        "role": task.role,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "error": None,
+        "score": 0.0,
+        "passed": 0,
+        "total": 0,
+        "checks": [],
+        "seconds": 0.0,
+        "tokens": {"input": 0, "output": 0, "total": 0},
+        "tool_calls": 0,
+        "subagent_calls": 0,
+        "skills_read": 0,
+        "skills_modified": False,
+        "skills_sha256": "",
+        "final_message": "",
+    }
+    messages = []
+    def error_text(exc):
+        text = f"{type(exc).__name__}: {exc}"
+        for key, value in os.environ.items():
+            if value and ("KEY" in key or "TOKEN" in key or "SECRET" in key):
+                text = text.replace(value, "[REDACTED]")
+        return re.sub(r"sk-[A-Za-z0-9_.*-]+", "[REDACTED]", text)
+
+    # The context manager removes the temporary copy even if execution fails.
+    with tempfile.TemporaryDirectory(prefix="lab-task-") as tmp:
+        sandbox = Path(tmp)
+        record["skills_sha256"] = hash_dir(sandbox / "skills")
+        try:
+            prepare_sandbox(task, sandbox, skills_dir)
+            # Windows Git checkouts may use CRLF, while the provided checker hashes
+            # the original LF Python files. Normalize only the temporary copy.
+            for source in (sandbox / "workspace").rglob("*.py"):
+                content = source.read_bytes()
+                normalized = content.replace(b"\r\n", b"\n")
+                if content != normalized:
+                    source.write_bytes(normalized)
+            record["skills_sha256"] = hash_dir(sandbox / "skills")
+            usage = UsageMetadataCallbackHandler()
+            started = time.perf_counter()
+            try:
+                agent = build_agent(
+                    sandbox,
+                    mode=cfg["mode"],
+                    use_skills=skills_dir is not None,
+                    model=model,
+                )
+                for result in agent.stream(
+                    {"messages": [{"role": "user", "content": task.instruction}]},
+                    config={"callbacks": [usage], "recursion_limit": recursion_limit},
+                    stream_mode="values",
+                ):
+                    # Keep the latest state so a recursion/API error retains its trace.
+                    messages = result["messages"]
+                    (out / "trace.md").write_text(render_trace(messages), encoding="utf-8")
+                if messages and isinstance(messages[-1], AIMessage):
+                    record["final_message"] = messages[-1].content
+            except Exception as exc:  # noqa: BLE001
+                record["error"] = error_text(exc)
+            record["seconds"] = round(time.perf_counter() - started, 1)
+            for counts in usage.usage_metadata.values():
+                for field in ("input", "output", "total"):
+                    record["tokens"][field] += counts.get(f"{field}_tokens", 0)
+
+            calls = [
+                call
+                for message in messages
+                if isinstance(message, AIMessage)
+                for call in message.tool_calls
+            ]
+            record["tool_calls"] = len(calls)
+            record["subagent_calls"] = sum(call["name"] == "task" for call in calls)
+            skills_read = set()
+            for call in calls:
+                if call["name"] != "read_file":
+                    continue
+                parts = PurePosixPath(
+                    str(call.get("args", {}).get("file_path", "")).replace("\\", "/")
+                ).parts
+                if "skills" in parts:
+                    index = parts.index("skills") + 1
+                    if index < len(parts):
+                        skills_read.add(parts[index])
+            record["skills_read"] = len(skills_read)
+
+            grading = grade(task, sandbox / "workspace")
+            grading_error = grading.pop("error", None)
+            record.update(grading)
+            if grading_error:
+                record["error"] = "; ".join(
+                    text for text in (record["error"], grading_error) if text
+                )
+        except Exception as exc:  # noqa: BLE001
+            record["error"] = error_text(exc)
+        finally:
+            record["skills_modified"] = (
+                hash_dir(sandbox / "skills") != record["skills_sha256"]
+            )
+
+    (out / "trace.md").write_text(render_trace(messages), encoding="utf-8")
+    (out / "run.json").write_text(
+        json.dumps(record, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+    return record
 
 
 def main(argv=None):

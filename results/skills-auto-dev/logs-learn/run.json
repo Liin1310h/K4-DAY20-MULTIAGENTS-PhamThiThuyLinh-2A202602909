@@ -1,0 +1,71 @@
+{
+  "task": "logs-learn",
+  "condition": "skills-auto",
+  "model": "openai:gpt-5.5",
+  "recursion_limit": 40,
+  "role": "learn",
+  "timestamp": "2026-10-06T10:37:48.405623+00:00",
+  "error": null,
+  "score": 1.0,
+  "passed": 9,
+  "total": 9,
+  "checks": [
+    {
+      "name": "valid_structure",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "entry_count",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "timestamps_utc",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "exception_fields",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "repeat_counts",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "counts_by_service",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "rule_service_names",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "rule_sorted_errors",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "rule_schema_header",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "seconds": 114.5,
+  "tokens": {
+    "input": 31749,
+    "output": 1515,
+    "total": 33264
+  },
+  "tool_calls": 6,
+  "subagent_calls": 0,
+  "skills_read": 1,
+  "skills_modified": false,
+  "skills_sha256": "0db117a5193c7aa5038ad5e9a971a841ad2846403336e0a572b9b7961f20d28c",
+  "final_message": "Created `workspace/errors.json`.\n\nParsed `workspace/app.log` by:\n- Keeping only case-insensitive `ERROR` and `CRITICAL` entries.\n- Converting timestamps to UTC.\n- Normalizing service names to lowercase with hyphens replaced by underscores.\n- Attaching traceback continuation lines and extracting their final exception line.\n- Applying repeat-marker counts to the preceding entry.\n- Sorting errors by service and timestamp, then recomputing service totals.\n\nValidated 25 normalized error records with counts: `auth_service: 8`, `inventory_service: 13`, `payment_service: 8`."
+}

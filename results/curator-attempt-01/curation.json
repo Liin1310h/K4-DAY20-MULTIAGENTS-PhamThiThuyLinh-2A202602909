@@ -1,0 +1,27 @@
+{
+  "timestamp": "2026-10-06T10:31:08.332270+00:00",
+  "model": "openai:gpt-5.5",
+  "source_condition": "baseline",
+  "learning_tasks": [
+    "code-learn",
+    "data-learn",
+    "logs-learn"
+  ],
+  "prompt_sha256": "81fa638827af8625b6490ce82bf8f5f2622bb5f48f326fd95403b3eafce3b3c5",
+  "seconds": 19.9,
+  "usage": {
+    "gpt-5.5": {
+      "input_tokens": 7231,
+      "output_tokens": 905,
+      "total_tokens": 8136,
+      "input_token_details": {},
+      "output_token_details": {
+        "reasoning": 81
+      }
+    }
+  },
+  "written_skills": [
+    "python-bugfix-package-conventions",
+    "log-triage-json-conventions"
+  ]
+}
